@@ -14,6 +14,8 @@ import { QUERY_PRODUCTS } from '../utils/queries';
 import spinner from '../assets/spinner.gif';
 import Cart from '../components/Cart';
 
+import { idbPromise } from '../utils/helpers';
+
 function Detail() {
 	const [state, dispatch] = useStoreContext();
 
@@ -26,15 +28,30 @@ function Detail() {
 	const { products, cart } = state;
 
 	useEffect(() => {
+		// global store data
 		if (products.length) {
 			setCurrentProduct(products.find((product) => product._id === id));
-		} else if (data) {
+		}
+		// retrieved form server
+		else if (data) {
 			dispatch({
 				type: UPDATE_PRODUCTS,
 				products: data.products,
 			});
+			data.products.forEach((product) => {
+				idbPromise('products', 'put', product);
+			});
 		}
-	}, [products, data, dispatch, id]);
+		// gete cache from idb
+		else if (!loading) {
+			idbPromise('products', 'get').then((indexedProducts) => {
+				dispatch({
+					type: UPDATE_PRODUCTS,
+					products: indexedProducts,
+				});
+			});
+		}
+	}, [products, data, loading, dispatch, id]);
 
 	const addToCart = () => {
 		const itemInCart = cart.find((cartItem) => cartItem._id === id);
@@ -45,11 +62,18 @@ function Detail() {
 				_id: id,
 				purchaseQuantity: parseInt(itemInCart.purchaseQuantity) + 1,
 			});
+
+			// when updating quanttity, use existing item data and increment purchaseQuantity value by one
+			idbPromise('cart', 'put', {
+				...itemInCart,
+				purchaseQuantity: parseInt(itemInCart.purchaseQuantity) + 1,
+			});
 		} else {
 			dispatch({
 				type: ADD_TO_CART,
 				product: { ...currentProduct, purchaseQuantity: 1 },
 			});
+			idbPromise('cart', 'put', { ...currentProduct, purchaseQuantity: 1 });
 		}
 	};
 
@@ -58,6 +82,9 @@ function Detail() {
 			type: REMOVE_FROM_CART,
 			_id: currentProduct._id,
 		});
+
+		// upon removal from cart, delete the item from IndexedDB using the `currentProduct` to locate what to remove
+		idbPromise('cart', 'delete', { ...currentProduct });
 	};
 
 	return (
