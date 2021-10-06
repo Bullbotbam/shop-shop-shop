@@ -16,7 +16,7 @@ An e-commerce app
 
 ## Description
 
-A social media application to share thoughts and reactions with friends.
+An ecommerce app to allow users find their favorite items and save for future purchases
 
 ## Installation
 
