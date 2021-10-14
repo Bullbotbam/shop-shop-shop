@@ -30,15 +30,6 @@ app.get('*', (req, res) => {
 	res.sendFile(path.join(__dirname, '../client/build/index.html'));
 });
 
-mongoose.connect(
-	process.env.MONGODB_URI || 'mongodb://localhost/shop-shop-shop',
-	{
-		useFindAndModify: false,
-		useNewUrlParser: true,
-		useUnifiedTopology: true,
-	}
-);
-
 db.once('open', () => {
 	app.listen(PORT, () => {
 		console.log(`API server running on port ${PORT}!`);
